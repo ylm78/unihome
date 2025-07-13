@@ -17,8 +17,20 @@ serve(async (req) => {
     // Configuration email (utilise Resend)
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
     
+    // Si pas de clé API, on continue sans envoyer d'email
     if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY not configured')
+      console.log('⚠️ RESEND_API_KEY non configurée - email non envoyé')
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Devis créé avec succès (email non envoyé - clé API manquante)',
+          emailSent: false
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      )
     }
 
     // Préparer le contenu de l'email
@@ -82,7 +94,21 @@ serve(async (req) => {
 
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text()
-      throw new Error(`Resend API error: ${errorText}`)
+      console.error('❌ Erreur Resend API:', errorText)
+      
+      // On retourne un succès même si l'email échoue
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Devis créé avec succès (erreur envoi email)',
+          emailSent: false,
+          emailError: errorText
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      )
     }
 
     const emailResult = await emailResponse.json()
@@ -91,7 +117,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Email de notification envoyé',
+        message: 'Devis créé et email de notification envoyé',
+        emailSent: true,
         emailId: emailResult.id 
       }),
       {
@@ -101,16 +128,18 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Erreur envoi email:', error)
+    console.error('❌ Erreur fonction:', error)
     
     return new Response(
       JSON.stringify({ 
-        success: false, 
+        success: true, // On garde success: true pour ne pas bloquer la création du devis
+        message: 'Devis créé avec succès (erreur technique email)',
+        emailSent: false,
         error: error.message 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: 200,
       },
     )
   }
