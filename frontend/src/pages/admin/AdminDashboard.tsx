@@ -294,7 +294,7 @@ const RecentQuotesList: React.FC = () => {
       // Simple query without any joins to avoid RLS recursion
       const { data, error } = await supabase
         .from('quotes')
-        .select('id, user_id, house_id, total_price, status, created_at')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(4);
       
