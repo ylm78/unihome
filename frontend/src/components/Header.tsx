@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
   <div className="flex items-center space-x-4">
     {isAdmin && (
       <button
-        onClick={() => window.location.href = '/admin'}
+        onClick={() => onNavigate('admin')}
         className="flex items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md"
       >
         👑 Admin

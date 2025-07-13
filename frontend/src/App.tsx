@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { CartProvider, useCart } from './context/CartContext';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminApp from './pages/admin/AdminApp';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -17,7 +17,7 @@ import FAQPage from './pages/FAQPage';
 import ContactPage from './pages/ContactPage';
 import { ContainerHouse } from './types';
 
-// ✅ Route protégée admin (à améliorer plus tard)
+// ✅ Route protégée admin
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, loading } = useAuth();
 
@@ -58,71 +58,205 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
-// ✅ App publique (hors espace admin)
-const PublicApp: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [navigationData, setNavigationData] = useState<NavigationData>({});
-  const { addToCart } = useCart();
+// ✅ Layout pour les pages publiques
+const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleNavigate = (page: string, data?: NavigationData) => {
-    // Si c'est admin, rediriger vers l'URL
-    if (page === 'admin') {
-      window.location.href = '/admin';
-      return;
-    }
-    
-    setCurrentPage(page);
-    setNavigationData(data || {});
+  const getCurrentPage = () => {
+    const path = location.pathname;
+    if (path === '/') return 'home';
+    if (path.startsWith('/catalog')) return 'catalog';
+    if (path.startsWith('/product')) return 'product';
+    if (path === '/cart') return 'cart';
+    if (path === '/login') return 'login';
+    if (path === '/quote') return 'quote';
+    if (path === '/build') return 'build';
+    if (path === '/faq') return 'faq';
+    if (path === '/contact') return 'contact';
+    return 'home';
   };
 
-  const handleAddToCart = (house: ContainerHouse) => {
-    // Cette fonction peut être utilisée plus tard si besoin
-  };
-
-  const renderCurrentPage = () => {
-    switch (currentPage) {
+  const handleNavigate = (page: string, data?: any) => {
+    switch (page) {
       case 'home':
-        return <HomePage onNavigate={handleNavigate} onAddToCart={handleAddToCart} />;
+        navigate('/');
+        break;
       case 'catalog':
-        return <CatalogPage onNavigate={handleNavigate} onAddToCart={handleAddToCart} />;
+        navigate('/catalog');
+        break;
       case 'product':
-        return (
-          <ProductPage
-            productId={navigationData.productId || ''}
-            onNavigate={handleNavigate}
-          />
-        );
+        navigate(`/product/${data?.productId || ''}`);
+        break;
       case 'cart':
-        return <CartPage onNavigate={handleNavigate} />;
+        navigate('/cart');
+        break;
       case 'login':
-        return <LoginPage onNavigate={handleNavigate} />;
+        navigate('/login');
+        break;
       case 'quote':
-        return <QuotePage onNavigate={handleNavigate} initialData={navigationData} />;
+        navigate('/quote', { state: data });
+        break;
       case 'build':
-        return <BuildPage onNavigate={handleNavigate} />;
+        navigate('/build');
+        break;
       case 'faq':
-        return <FAQPage onNavigate={handleNavigate} />;
+        navigate('/faq');
+        break;
       case 'contact':
-        return <ContactPage onNavigate={handleNavigate} />;
+        navigate('/contact');
+        break;
+      case 'admin':
+        navigate('/admin');
+        break;
       default:
-        return <HomePage onNavigate={handleNavigate} onAddToCart={handleAddToCart} />;
+        navigate('/');
     }
   };
 
   return (
     <div className="min-h-screen bg-amber-50">
-      <Header currentPage={currentPage} onNavigate={handleNavigate} />
-      <main>{renderCurrentPage()}</main>
+      <Header currentPage={getCurrentPage()} onNavigate={handleNavigate} />
+      <main>{children}</main>
       <Footer onNavigate={handleNavigate} />
     </div>
   );
 };
 
-interface NavigationData {
-  productId?: string;
-  houseId?: string;
-  cartItems?: any[];
-}
+// ✅ Pages avec navigation
+const HomePageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleNavigate = (page: string, data?: any) => {
+    if (page === 'product') {
+      navigate(`/product/${data?.productId}`);
+    } else if (page === 'catalog') {
+      navigate('/catalog');
+    }
+  };
+
+  const handleAddToCart = (house: ContainerHouse) => {
+    // Logique d'ajout au panier
+  };
+
+  return <HomePage onNavigate={handleNavigate} onAddToCart={handleAddToCart} />;
+};
+
+const CatalogPageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleNavigate = (page: string, data?: any) => {
+    if (page === 'product') {
+      navigate(`/product/${data?.productId}`);
+    }
+  };
+
+  const handleAddToCart = (house: ContainerHouse) => {
+    // Logique d'ajout au panier
+  };
+
+  return <CatalogPage onNavigate={handleNavigate} onAddToCart={handleAddToCart} />;
+};
+
+const ProductPageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const productId = location.pathname.split('/product/')[1] || '';
+  
+  const handleNavigate = (page: string, data?: any) => {
+    if (page === 'catalog') {
+      navigate('/catalog');
+    } else if (page === 'quote') {
+      navigate('/quote', { state: data });
+    }
+  };
+
+  return <ProductPage productId={productId} onNavigate={handleNavigate} />;
+};
+
+const CartPageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleNavigate = (page: string, data?: any) => {
+    if (page === 'home') {
+      navigate('/');
+    } else if (page === 'catalog') {
+      navigate('/catalog');
+    } else if (page === 'quote') {
+      navigate('/quote', { state: data });
+    }
+  };
+
+  return <CartPage onNavigate={handleNavigate} />;
+};
+
+const LoginPageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      navigate('/');
+    }
+  };
+
+  return <LoginPage onNavigate={handleNavigate} />;
+};
+
+const QuotePageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      navigate('/');
+    }
+  };
+
+  return <QuotePage onNavigate={handleNavigate} initialData={location.state} />;
+};
+
+const BuildPageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      navigate('/');
+    } else if (page === 'contact') {
+      navigate('/contact');
+    } else if (page === 'quote') {
+      navigate('/quote');
+    }
+  };
+
+  return <BuildPage onNavigate={handleNavigate} />;
+};
+
+const FAQPageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      navigate('/');
+    } else if (page === 'contact') {
+      navigate('/contact');
+    }
+  };
+
+  return <FAQPage onNavigate={handleNavigate} />;
+};
+
+const ContactPageWithNav: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleNavigate = (page: string) => {
+    if (page === 'home') {
+      navigate('/');
+    }
+  };
+
+  return <ContactPage onNavigate={handleNavigate} />;
+};
 
 // ✅ Wrapper avec gestion du chargement de l'utilisateur
 function AppContent() {
@@ -142,8 +276,22 @@ function AppContent() {
 
   return (
     <Routes>
+      {/* Route admin */}
       <Route path="/admin" element={<AdminRoute><AdminApp /></AdminRoute>} />
-      <Route path="/*" element={<PublicApp />} />
+      
+      {/* Routes publiques avec layout */}
+      <Route path="/" element={<PublicLayout><HomePageWithNav /></PublicLayout>} />
+      <Route path="/catalog" element={<PublicLayout><CatalogPageWithNav /></PublicLayout>} />
+      <Route path="/product/:id" element={<PublicLayout><ProductPageWithNav /></PublicLayout>} />
+      <Route path="/cart" element={<PublicLayout><CartPageWithNav /></PublicLayout>} />
+      <Route path="/login" element={<PublicLayout><LoginPageWithNav /></PublicLayout>} />
+      <Route path="/quote" element={<PublicLayout><QuotePageWithNav /></PublicLayout>} />
+      <Route path="/build" element={<PublicLayout><BuildPageWithNav /></PublicLayout>} />
+      <Route path="/faq" element={<PublicLayout><FAQPageWithNav /></PublicLayout>} />
+      <Route path="/contact" element={<PublicLayout><ContactPageWithNav /></PublicLayout>} />
+      
+      {/* Fallback */}
+      <Route path="*" element={<PublicLayout><HomePageWithNav /></PublicLayout>} />
     </Routes>
   );
 }
