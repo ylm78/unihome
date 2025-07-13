@@ -62,41 +62,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.error('❌ Exception lors du chargement du profil:', err);
       // Créer un utilisateur basique pour ne pas bloquer l'application
-      setUser({ id: userId, email, firstName: '', lastName: '', phone: '', address: '' });
+    if (!isInitialized) {
+      initializeCart();
     }
+  }, [supabaseUser]);
   };
 
   useEffect(() => {
     const init = async () => {
-      console.log('🔐 Initialisation de l\'authentification...');
-      setLoading(true);
+      if (supabaseUser) {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('❌ Erreur de session:', error.message);
-          setLoading(false);
           return;
         }
         if (session?.user) {
           console.log('✅ Session utilisateur trouvée');
           setSupabaseUser(session.user);
           await loadUserProfile(session.user.id, session.user.email || '');
-        } else {
-          console.log('ℹ️ Aucune session utilisateur');
+      } else if (!supabaseUser) {
         }
       } catch (err) {
         console.error('❌ Erreur d\'initialisation:', err);
       } finally {
         console.log('✅ Initialisation terminée');
-        setLoading(false);
       }
+      setIsInitialized(true);
     };
 
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('🔄 Changement d\'état d\'authentification:', _event);
-      setLoading(true);
       try {
         if (session?.user) {
           setSupabaseUser(session.user);
@@ -107,8 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
         console.error('❌ Erreur changement d\'état:', err);
-      } finally {
-        setLoading(false);
       }
     });
 

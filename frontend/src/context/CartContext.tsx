@@ -129,6 +129,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'LOAD_CART', payload: cartItems });
     } catch (error) {
       console.error('Erreur lors de la synchronisation du panier:', error);
+      // Ne pas bloquer l'application en cas d'erreur
     }
   };
 
