@@ -75,42 +75,6 @@ const AdminDashboard: React.FC = () => {
       setLoading(false);
     }
   };
-      ]);
-      
-      const houses = housesResult.data || [];
-      const quotes = quotesResult.data || [];
-      const orders = ordersResult.data || [];
-      const userProfiles = userProfilesResult.data || [];
-      
-      const totalRevenue = orders.reduce((sum, order) => {
-        return sum + Math.round(order.total_price / 100);
-      }, 0);
-      
-      const pendingQuotes = quotes.filter(q => q.status === 'pending').length;
-      
-      setStats({
-        totalHouses: houses.length,
-        totalOrders: orders.length,
-        totalQuotes: quotes.length,
-        totalUsers: userProfiles.length,
-        monthlyRevenue: totalRevenue,
-        pendingQuotes: pendingQuotes,
-      });
-    } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
-      // Définir des valeurs par défaut en cas d'erreur
-      setStats({
-        totalHouses: 0,
-        totalOrders: 0,
-        totalQuotes: 0,
-        totalUsers: 0,
-        monthlyRevenue: 0,
-        pendingQuotes: 0,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const statCards = [
     {
@@ -238,13 +202,30 @@ const AdminDashboard: React.FC = () => {
 };
 
 // Composant pour afficher les commandes récentes
-      // Simple query without any joins to avoid RLS recursion
+const RecentOrdersList: React.FC = () => {
+  const [orders, setOrders] = useState<any[]>([]);
+  
+  React.useEffect(() => {
+    loadRecentOrders();
+  }, []);
+  
+  const loadRecentOrders = async () => {
+    try {
       // Simple query without any joins to avoid RLS recursion
       const { data, error } = await supabase
         .from('quotes')
         .select('id, user_id, total_price, status, created_at')
         .order('created_at', { ascending: false })
         .limit(4);
+      
+      if (error) {
+        console.error('❌ Erreur commandes:', error.message);
+        setOrders([]);
+        return;
+      }
+      
+      console.log('✅ Commandes chargées:', data?.length || 0);
+      setOrders(data || []);
     } catch (error: any) {
       console.error('❌ Exception commandes:', error.message);
       setOrders([]);
@@ -313,6 +294,8 @@ const RecentQuotesList: React.FC = () => {
       // Simple query without any joins to avoid RLS recursion
       const { data, error } = await supabase
         .from('quotes')
+        .select('id, user_id, house_id, total_price, status, created_at')
+        .order('created_at', { ascending: false })
         .limit(4);
       
       if (error) {
@@ -336,12 +319,13 @@ const RecentQuotesList: React.FC = () => {
           <div>
             <p className="font-medium text-gray-900">#D{quote.id.slice(0, 6)}</p>
             <p className="text-sm text-gray-600">
-              Client #{(quote.user_id || 'unknown').slice(0, 8)}
+              Client #{quote.user_id?.slice(0, 8) || 'Inconnu'}
             </p>
+            <p className="text-xs text-gray-500">Maison #{quote.house_id?.slice(0, 8) || 'Inconnue'}</p>
           </div>
           <div className="text-right">
             <p className="font-medium text-gray-900">
-              {Math.round((quote.total_price || 0) / 100).toLocaleString('fr-FR')}€
+              {Math.round(quote.total_price / 100).toLocaleString('fr-FR')}€
             </p>
             <span className={`text-xs px-2 py-1 rounded-full ${
               quote.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :

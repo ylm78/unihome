@@ -206,18 +206,23 @@ const RecentOrdersList: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   
   React.useEffect(() => {
-    loadOrders();
+    loadRecentOrders();
   }, []);
   
-  const loadOrders = async () => {
+  const loadRecentOrders = async () => {
     try {
-      // Simple query without joins to avoid RLS recursion
+      // Simple query without any joins to avoid RLS recursion
       const { data, error } = await supabase
-        .from('orders')
-        .select('id, user_id, house_id, color_id, size_id, quantity, total_price, status, created_at, updated_at')
-        .order('created_at', { ascending: false });
+        .from('quotes')
+        .select('id, user_id, total_price, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(4);
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erreur commandes:', error.message);
+        setOrders([]);
+        return;
+      }
       
       console.log('✅ Commandes chargées:', data?.length || 0);
       setOrders(data || []);
@@ -289,7 +294,7 @@ const RecentQuotesList: React.FC = () => {
       // Simple query without any joins to avoid RLS recursion
       const { data, error } = await supabase
         .from('quotes')
-        .select('id, user_id, total_price, status, created_at')
+        .select('id, user_id, house_id, total_price, status, created_at')
         .order('created_at', { ascending: false })
         .limit(4);
       
