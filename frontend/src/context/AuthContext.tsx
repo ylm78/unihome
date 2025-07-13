@@ -67,11 +67,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    if (supabaseUser) {
+      if (!isInitialized) {
+        initializeCart();
+      }
+    }
+  }, [supabaseUser]);
+
+  useEffect(() => {
     const init = async () => {
+      setLoading(true);
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('❌ Erreur de session:', error.message);
+          setLoading(false);
           return;
         }
         if (session?.user) {
@@ -85,12 +95,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('✅ Initialisation terminée');
         setLoading(false);
       }
+      setIsInitialized(true);
     };
 
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('🔄 Changement d\'état d\'authentification:', _event);
+      setLoading(true);
       try {
         if (session?.user) {
           setSupabaseUser(session.user);
@@ -101,6 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err) {
         console.error('❌ Erreur changement d\'état:', err);
+      } finally {
+        setLoading(false);
       }
     });
 
