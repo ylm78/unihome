@@ -67,14 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    if (supabaseUser) {
-      if (!isInitialized) {
-        initializeCart();
-      }
-    }
-  }, [supabaseUser]);
-
-  useEffect(() => {
     const init = async () => {
       setLoading(true);
       try {
@@ -95,7 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('✅ Initialisation terminée');
         setLoading(false);
       }
-      setIsInitialized(true);
     };
 
     init();
