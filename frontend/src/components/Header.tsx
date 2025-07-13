@@ -11,7 +11,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { totalItems } = useCart();
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, isAdmin } = useAuth();
 
   const navigation = [
     { name: 'Accueil', id: 'home', icon: Home },
@@ -75,12 +75,21 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
             {loading ? (
   <span className="text-sm text-gray-400">...</span>
 ) : user ? (
-  <div className="flex flex-col items-end text-right">
+  <div className="flex items-center space-x-4">
+    {isAdmin && (
+      <button
+        onClick={() => window.location.href = '/admin'}
+        className="flex items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md"
+      >
+        👑 Admin
+      </button>
+    )}
+    <div className="flex flex-col items-end text-right">
     <span className="text-sm text-amber-800">
   {user?.firstName ? (
     <>Vous êtes connecté en tant que <strong>{user.firstName}</strong></>
   ) : (
-    <>Bienvenue</>
+    <>Bienvenue {isAdmin ? '👑' : ''}</>
   )}
 </span>
 
@@ -90,6 +99,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
     >
       Déconnexion
     </button>
+    </div>
   </div>
 ) : (
   <button

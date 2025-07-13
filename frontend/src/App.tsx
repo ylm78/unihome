@@ -18,6 +18,56 @@ import { ContainerHouse } from './types';
 
 // ✅ Route protégée admin (à améliorer plus tard)
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-amber-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
+          <p className="text-amber-800 text-lg">Vérification des permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">🚫</div>
+          <h1 className="text-2xl font-bold text-red-900 mb-4">Accès refusé</h1>
+          <p className="text-red-700 mb-6">Vous devez être connecté pour accéder à cette page.</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⛔</div>
+          <h1 className="text-2xl font-bold text-red-900 mb-4">Accès administrateur requis</h1>
+          <p className="text-red-700 mb-2">Seuls les administrateurs peuvent accéder à cette section.</p>
+          <p className="text-red-600 text-sm mb-6">Votre compte : {user.email}</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Retour à l'accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return <>{children}</>;
 };
 
