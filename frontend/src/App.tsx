@@ -65,6 +65,12 @@ const PublicApp: React.FC = () => {
   const { addToCart } = useCart();
 
   const handleNavigate = (page: string, data?: NavigationData) => {
+    // Si c'est admin, rediriger vers l'URL
+    if (page === 'admin') {
+      window.location.href = '/admin';
+      return;
+    }
+    
     setCurrentPage(page);
     setNavigationData(data || {});
   };
