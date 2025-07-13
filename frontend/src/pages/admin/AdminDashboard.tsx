@@ -28,12 +28,53 @@ const AdminDashboard: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      // Charger les données de base sans relations complexes
-      const [housesResult, quotesResult, ordersResult, userProfilesResult] = await Promise.all([
-        supabase.from('houses').select('*'),
-        supabase.from('quotes').select('*'),
-        supabase.from('orders').select('*'),
-        supabase.from('user_profiles').select('*')
+      // Charger les données de base une par une pour éviter les erreurs
+      const housesResult = await supabase.from('houses').select('id');
+      const quotesResult = await supabase.from('quotes').select('id, status, total_price');
+      const ordersResult = await supabase.from('orders').select('id, total_price');
+      const userProfilesResult = await supabase.from('user_profiles').select('id');
+      
+      const houses = housesResult.data || [];
+      const quotes = quotesResult.data || [];
+      const orders = ordersResult.data || [];
+      const userProfiles = userProfilesResult.data || [];
+      
+      console.log('✅ Données chargées:', {
+        houses: houses.length,
+        quotes: quotes.length,
+        orders: orders.length,
+        users: userProfiles.length
+      });
+      
+      const totalRevenue = orders.reduce((sum, order) => {
+        return sum + Math.round((order.total_price || 0) / 100);
+      }, 0);
+      
+      const pendingQuotes = quotes.filter(q => q.status === 'pending').length;
+      
+      setStats({
+        totalHouses: houses.length,
+        totalOrders: orders.length,
+        totalQuotes: quotes.length,
+        totalUsers: userProfiles.length,
+        monthlyRevenue: totalRevenue,
+        pendingQuotes: pendingQuotes,
+      });
+    } catch (error: any) {
+      console.error('❌ Erreur lors du chargement des statistiques:', error.message);
+      // Définir des valeurs par défaut en cas d'erreur
+      setStats({
+        totalHouses: 0,
+        totalOrders: 0,
+        totalQuotes: 0,
+        totalUsers: 0,
+        monthlyRevenue: 0,
+        pendingQuotes: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
       ]);
       
       const houses = housesResult.data || [];
@@ -197,40 +238,15 @@ const AdminDashboard: React.FC = () => {
 };
 
 // Composant pour afficher les commandes récentes
-const RecentOrdersList: React.FC = () => {
-  const [orders, setOrders] = useState<any[]>([]);
-  
-  React.useEffect(() => {
-    loadRecentOrders();
-  }, []);
-  
-  const loadRecentOrders = async () => {
-    try {
+      // Simple query without any joins to avoid RLS recursion
+      // Simple query without any joins to avoid RLS recursion
       const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          user_id,
-          house_id,
-          color_id,
-          size_id,
-          quantity,
-          total_price,
-          status,
-          created_at
-        `)
+        .from('quotes')
+        .select('id, user_id, total_price, status, created_at')
         .order('created_at', { ascending: false })
         .limit(4);
-      
-      if (error) {
-        console.error('Erreur lors du chargement des commandes:', error);
-        setOrders([]);
-        return;
-      }
-      
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Erreur lors du chargement des commandes:', error);
+    } catch (error: any) {
+      console.error('❌ Exception commandes:', error.message);
       setOrders([]);
     }
   };
@@ -294,21 +310,21 @@ const RecentQuotesList: React.FC = () => {
   
   const loadRecentQuotes = async () => {
     try {
+      // Simple query without any joins to avoid RLS recursion
       const { data, error } = await supabase
         .from('quotes')
-        .select('id, user_id, house_id, color_id, size_id, total_price, status, created_at')
-        .order('created_at', { ascending: false })
         .limit(4);
       
       if (error) {
-        console.error('Erreur lors du chargement des devis:', error);
+        console.error('❌ Erreur devis:', error.message);
         setQuotes([]);
         return;
       }
       
+      console.log('✅ Devis chargés:', data?.length || 0);
       setQuotes(data || []);
-    } catch (error) {
-      console.error('Erreur lors du chargement des devis:', error);
+    } catch (error: any) {
+      console.error('❌ Exception devis:', error.message);
       setQuotes([]);
     }
   };
@@ -320,13 +336,12 @@ const RecentQuotesList: React.FC = () => {
           <div>
             <p className="font-medium text-gray-900">#D{quote.id.slice(0, 6)}</p>
             <p className="text-sm text-gray-600">
-              Client #{quote.user_id?.slice(0, 8) || 'Inconnu'}
+              Client #{(quote.user_id || 'unknown').slice(0, 8)}
             </p>
-            <p className="text-xs text-gray-500">Maison #{quote.house_id?.slice(0, 8) || 'Inconnue'}</p>
           </div>
           <div className="text-right">
             <p className="font-medium text-gray-900">
-              {Math.round(quote.total_price / 100).toLocaleString('fr-FR')}€
+              {Math.round((quote.total_price || 0) / 100).toLocaleString('fr-FR')}€
             </p>
             <span className={`text-xs px-2 py-1 rounded-full ${
               quote.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
