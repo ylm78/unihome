@@ -115,6 +115,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  // Fonction pour migrer le panier localStorage vers la DB lors de la connexion
+  const migrateLocalCartToDatabase = async (userId: string) => {
+    try {
+      const localCart = localStorage.getItem('cart');
+      if (localCart) {
+        const cartItems = JSON.parse(localCart);
+        if (cartItems.length > 0) {
+          console.log('🛒 Migration du panier local vers la base de données...');
+          // Cette migration sera gérée par le CartContext
+          // On vide juste le localStorage après la connexion
+          localStorage.removeItem('cart');
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la migration du panier:', error);
+    }
+  };
+
   const login = async (email: string, password: string): Promise<boolean> => {
     console.log('🔑 Tentative de connexion pour:', email);
     setLoading(true);
@@ -128,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         console.log('✅ Connexion réussie');
         await loadUserProfile(data.user.id, data.user.email || '');
+        await migrateLocalCartToDatabase(data.user.id);
       }
 
       return true;

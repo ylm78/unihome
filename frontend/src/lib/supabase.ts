@@ -111,6 +111,23 @@ export interface DatabaseUserProfile {
   updated_at: string;
 }
 
+export interface DatabaseCartItem {
+  id: string;
+  user_id: string;
+  house_id: string;
+  color_id?: string;
+  size_id?: string;
+  quantity: number;
+  unit_price: number; // Prix en centimes
+  total_price: number; // Prix en centimes
+  house_name: string;
+  color_name: string;
+  size_name: string;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Fonctions utilitaires pour la conversion des prix
 export const formatPrice = (priceInCents: number): string => {
   return (priceInCents / 100).toLocaleString('fr-FR');
@@ -417,6 +434,109 @@ export class UserService {
       .from('user_profiles')
       .delete()
       .eq('id', id);
+    
+    if (error) throw error;
+  }
+}
+
+export class CartService {
+  static async getUserCart(userId: string) {
+    const { data, error } = await supabase
+      .from('cart_items')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async addToCart(cartItem: Omit<DatabaseCartItem, 'id' | 'created_at' | 'updated_at'>) {
+    // Vérifier si l'item existe déjà
+    const { data: existing, error: checkError } = await supabase
+      .from('cart_items')
+      .select('*')
+      .eq('user_id', cartItem.user_id)
+      .eq('house_id', cartItem.house_id)
+      .eq('color_id', cartItem.color_id || '')
+      .eq('size_id', cartItem.size_id || '')
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+
+    if (existing) {
+      // Mettre à jour la quantité
+      const newQuantity = existing.quantity + cartItem.quantity;
+      const newTotalPrice = cartItem.unit_price * newQuantity;
+      
+      const { data, error } = await supabase
+        .from('cart_items')
+        .update({ 
+          quantity: newQuantity,
+          total_price: newTotalPrice
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } else {
+      // Créer un nouvel item
+      const { data, error } = await supabase
+        .from('cart_items')
+        .insert([cartItem])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    }
+  }
+
+  static async updateQuantity(itemId: string, quantity: number) {
+    if (quantity <= 0) {
+      return this.removeFromCart(itemId);
+    }
+
+    const { data: item, error: getError } = await supabase
+      .from('cart_items')
+      .select('unit_price')
+      .eq('id', itemId)
+      .single();
+
+    if (getError) throw getError;
+
+    const { data, error } = await supabase
+      .from('cart_items')
+      .update({ 
+        quantity,
+        total_price: item.unit_price * quantity
+      })
+      .eq('id', itemId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
+  static async removeFromCart(itemId: string) {
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('id', itemId);
+    
+    if (error) throw error;
+  }
+
+  static async clearUserCart(userId: string) {
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('user_id', userId);
     
     if (error) throw error;
   }
