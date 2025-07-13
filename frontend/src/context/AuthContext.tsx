@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
+import toast from 'react-hot-toast';
 
 type RegisterParams = {
   email: string;
@@ -39,7 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.warn('[loadUserProfile] Erreur Supabase :', error.message);
-        setUser(null);
+        // Ne pas bloquer si le profil n'existe pas encore
+        setUser({ id: userId, email, firstName: '', lastName: '', phone: '', address: '' });
         return;
       }
 
@@ -59,7 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (err) {
       console.error('[loadUserProfile] Exception bloquante :', err);
-      setUser(null);
+      // Ne pas bloquer l'application, créer un utilisateur basique
+      setUser({ id: userId, email, firstName: '', lastName: '', phone: '', address: '' });
     }
   };
 
@@ -68,13 +71,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('[AuthContext] Démarrage chargement session');
       setLoading(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('[AuthContext] Erreur session :', error);
+          setLoading(false);
+          return;
+        }
         if (session?.user) {
           setSupabaseUser(session.user);
           await loadUserProfile(session.user.id, session.user.email);
         }
       } catch (err) {
         console.error('[AuthContext] Erreur session :', err);
+        toast.error('Erreur de connexion à la base de données');
       } finally {
         setLoading(false);
       }
@@ -84,14 +93,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setLoading(true);
-      if (session?.user) {
-        setSupabaseUser(session.user);
-        await loadUserProfile(session.user.id, session.user.email);
-      } else {
-        setSupabaseUser(null);
-        setUser(null);
+      try {
+        if (session?.user) {
+          setSupabaseUser(session.user);
+          await loadUserProfile(session.user.id, session.user.email);
+        } else {
+          setSupabaseUser(null);
+          setUser(null);
+        }
+      } catch (err) {
+        console.error('[AuthContext] Erreur auth state change :', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -111,11 +125,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       console.error("Erreur de connexion:", err.message);
+      toast.error(err.message || 'Erreur de connexion');
       return false;
+    } finally {
+      setLoading(false);
     }
-    finally {
-    setLoading(false); // ✅
-  }
   };
 
   const register = async ({
@@ -147,6 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     } catch (err: any) {
       console.error("Erreur d'inscription:", err.message);
+      toast.error(err.message || 'Erreur d\'inscription');
       return false;
     }
   };

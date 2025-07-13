@@ -22,31 +22,43 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onAddToCart }) => {
 
   const loadFeaturedHouses = async () => {
     try {
-      const data = await HouseService.getAll();
+      // Vérifier la connexion Supabase avant de charger les données
+      const { data, error } = await supabase.from('houses').select('*').limit(3);
+      
+      if (error) {
+        console.error('Erreur Supabase:', error);
+        // Utiliser des données de fallback si Supabase n'est pas disponible
+        setFeaturedHouses([]);
+        setLoading(false);
+        return;
+      }
+      
       // Convertir les données Supabase vers le format ContainerHouse et prendre les 3 premières
-      const convertedHouses: ContainerHouse[] = (data || []).slice(0, 3).map(house => ({
+      const convertedHouses: ContainerHouse[] = (data || []).map(house => ({
         id: house.id,
         name: house.name,
         description: house.description,
-        shortDescription: house.short_description,
-        basePrice: Math.round(house.base_price / 100), // Convertir depuis les centimes
+        shortDescription: house.short_description || house.description,
+        basePrice: Math.round((house.base_price || 0) / 100), // Convertir depuis les centimes
         images: house.images,
         specifications: {
-          surface: house.surface,
-          bedrooms: house.bedrooms,
-          bathrooms: house.bathrooms,
-          containers: house.containers,
-          livingRoom: house.living_room,
-          kitchen: house.kitchen,
+          surface: house.surface || 0,
+          bedrooms: house.bedrooms || 0,
+          bathrooms: house.bathrooms || 0,
+          containers: house.containers || 1,
+          livingRoom: house.living_room || false,
+          kitchen: house.kitchen || false,
         },
         colors: [], // Sera chargé séparément si nécessaire
         sizes: [], // Sera chargé séparément si nécessaire
-        features: house.features,
-        category: house.category,
+        features: house.features || [],
+        category: house.category || 'residential',
       }));
       setFeaturedHouses(convertedHouses);
     } catch (error) {
       console.error('Erreur lors du chargement des maisons:', error);
+      // Ne pas bloquer l'application, juste afficher une liste vide
+      setFeaturedHouses([]);
     } finally {
       setLoading(false);
     }
