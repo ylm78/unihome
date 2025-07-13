@@ -62,15 +62,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.error('❌ Exception lors du chargement du profil:', err);
       // Créer un utilisateur basique pour ne pas bloquer l'application
-    if (!isInitialized) {
-      initializeCart();
+      setUser({ id: userId, email, firstName: '', lastName: '', phone: '', address: '' });
     }
-  }, [supabaseUser]);
   };
 
   useEffect(() => {
     const init = async () => {
-      if (supabaseUser) {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
@@ -81,14 +78,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('✅ Session utilisateur trouvée');
           setSupabaseUser(session.user);
           await loadUserProfile(session.user.id, session.user.email || '');
-      } else if (!supabaseUser) {
         }
       } catch (err) {
         console.error('❌ Erreur d\'initialisation:', err);
       } finally {
         console.log('✅ Initialisation terminée');
+        setLoading(false);
       }
-      setIsInitialized(true);
     };
 
     init();
