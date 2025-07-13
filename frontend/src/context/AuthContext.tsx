@@ -143,9 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Redirection automatique pour l'admin
         if (isUserAdmin(data.user.email || '')) {
           console.log('🔑 Utilisateur admin détecté, redirection vers /admin');
-          setTimeout(() => {
-            window.location.href = '/admin';
-          }, 1000);
+          // Pas de redirection automatique, on laisse React Router gérer
         }
         
         return true;

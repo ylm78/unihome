@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CartProvider, useCart } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminApp from './pages/admin/AdminApp';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -32,21 +33,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-red-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-4">🚫</div>
-          <h1 className="text-2xl font-bold text-red-900 mb-4">Accès refusé</h1>
-          <p className="text-red-700 mb-6">Vous devez être connecté pour accéder à cette page.</p>
-          <button
-            onClick={() => window.location.href = '/'}
-            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Retour à l'accueil
-          </button>
-        </div>
-      </div>
-    );
+    return <AdminLoginPage />;
   }
 
   if (!isAdmin) {
