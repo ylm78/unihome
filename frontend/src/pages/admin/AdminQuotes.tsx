@@ -33,10 +33,13 @@ const AdminQuotes: React.FC = () => {
 
   const loadQuotes = async () => {
     try {
-      // Simple query without joins to avoid RLS recursion
+      // Charger les devis avec les informations des utilisateurs
       const { data, error } = await supabase
         .from('quotes')
-        .select('id, user_id, house_id, color_id, size_id, customizations, total_price, status, message, admin_notes, created_at, updated_at')
+        .select(`
+          *,
+          user_profiles!inner(first_name, last_name, email)
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -202,9 +205,18 @@ const AdminQuotes: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {quote.user_profiles ? 
-                        `${quote.user_profiles.first_name} ${quote.user_profiles.last_name}` : 
-                        `Client #${quote.user_id}`
+                      {quote.user_profiles ? (
+                        <div>
+                          <div className="font-medium">
+                            {quote.user_profiles.first_name} {quote.user_profiles.last_name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {quote.user_profiles.email}
+                          </div>
+                        </div>
+                      ) : (
+                        `Client #${quote.user_id.slice(0, 8)}`
+                      )
                       }
                     </div>
                   </td>

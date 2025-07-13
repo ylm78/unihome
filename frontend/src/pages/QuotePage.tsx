@@ -144,7 +144,37 @@ const QuotePage: React.FC<QuotePageProps> = ({ onNavigate, initialData }) => {
         status: 'pending' as const
       };
 
-      await QuoteService.create(quoteData);
+      const newQuote = await QuoteService.create(quoteData);
+      
+      // Envoyer notification email
+      try {
+        const emailData = {
+          ...newQuote,
+          house_name: house?.name,
+          color_name: color?.name,
+          size_name: size?.name,
+          user_email: supabaseUser.email,
+        };
+        
+        const emailResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-quote-notification`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ quote: emailData }),
+        });
+        
+        if (emailResponse.ok) {
+          console.log('✅ Email de notification envoyé');
+        } else {
+          console.warn('⚠️ Erreur envoi email, mais devis créé');
+        }
+      } catch (emailError) {
+        console.warn('⚠️ Erreur envoi email:', emailError);
+        // On continue même si l'email échoue
+      }
+      
       toast.success('Votre demande de devis a été envoyée avec succès !');
       setIsSubmitted(true);
     } catch (error) {
