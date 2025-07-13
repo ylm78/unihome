@@ -208,25 +208,17 @@ const RecentOrdersList: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`
-          *,
-          user_profiles!orders_user_id_fkey(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(4);
       
       if (error) {
         console.error('Erreur lors du chargement des commandes:', error);
-        // Fallback: charger sans les relations
-        const { data: fallbackData } = await supabase
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(4);
-        setOrders(fallbackData || []);
-      } else {
-        setOrders(data || []);
+        setOrders([]);
+        return;
       }
+      
+      setOrders(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des commandes:', error);
       setOrders([]);
@@ -262,10 +254,7 @@ const RecentOrdersList: React.FC = () => {
           <div>
             <p className="font-medium text-gray-900">#{order.id.slice(0, 8)}</p>
             <p className="text-sm text-gray-600">
-              {order.user_profiles ? 
-                `${order.user_profiles.first_name} ${order.user_profiles.last_name}` : 
-                'Client'
-              }
+              Client #{order.user_id?.slice(0, 8) || 'Inconnu'}
             </p>
           </div>
           <div className="text-right">
@@ -297,26 +286,17 @@ const RecentQuotesList: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quotes')
-        .select(`
-          *,
-          houses!quotes_house_id_fkey(name),
-          user_profiles!quotes_user_id_fkey(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(4);
       
       if (error) {
         console.error('Erreur lors du chargement des devis:', error);
-        // Fallback: charger sans les relations
-        const { data: fallbackData } = await supabase
-          .from('quotes')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(4);
-        setQuotes(fallbackData || []);
-      } else {
-        setQuotes(data || []);
+        setQuotes([]);
+        return;
       }
+      
+      setQuotes(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des devis:', error);
       setQuotes([]);
@@ -330,12 +310,9 @@ const RecentQuotesList: React.FC = () => {
           <div>
             <p className="font-medium text-gray-900">#D{quote.id.slice(0, 6)}</p>
             <p className="text-sm text-gray-600">
-              {quote.user_profiles ? 
-                `${quote.user_profiles.first_name} ${quote.user_profiles.last_name}` : 
-                'Client'
-              }
+              Client #{quote.user_id?.slice(0, 8) || 'Inconnu'}
             </p>
-            <p className="text-xs text-gray-500">{quote.houses?.name || 'Maison'}</p>
+            <p className="text-xs text-gray-500">Maison #{quote.house_id?.slice(0, 8) || 'Inconnue'}</p>
           </div>
           <div className="text-right">
             <p className="font-medium text-gray-900">
