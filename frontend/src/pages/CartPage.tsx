@@ -1,7 +1,9 @@
 import React from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 interface CartPageProps {
   onNavigate: (page: string, data?: any) => void;
