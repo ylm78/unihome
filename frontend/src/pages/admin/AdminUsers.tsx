@@ -32,13 +32,7 @@ const AdminUsers: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select(`
-          *,
-          users:id (
-            email,
-            last_sign_in_at
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -91,7 +85,7 @@ const AdminUsers: React.FC = () => {
     const matchesSearch = 
       (user.first_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.last_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.users?.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     
@@ -197,7 +191,7 @@ const AdminUsers: React.FC = () => {
                         <div className="text-sm font-medium text-gray-900">
                           {user.first_name || 'Prénom'} {user.last_name || 'Nom'}
                         </div>
-                        <div className="text-sm text-gray-500">{user.users?.email || 'Email non disponible'}</div>
+                        <div className="text-sm text-gray-500">{user.email || 'Email non disponible'}</div>
                       </div>
                     </div>
                   </td>
@@ -211,7 +205,7 @@ const AdminUsers: React.FC = () => {
                       )}
                       <div className="flex items-center text-sm text-gray-500">
                         <Mail className="w-4 h-4 mr-1" />
-                        {user.users?.email || 'Email non disponible'}
+                        {user.email || 'Email non disponible'}
                       </div>
                     </div>
                   </td>
@@ -233,10 +227,7 @@ const AdminUsers: React.FC = () => {
                     {new Date(user.created_at).toLocaleDateString('fr-FR')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.users?.last_sign_in_at 
-                      ? new Date(user.users.last_sign_in_at).toLocaleDateString('fr-FR')
-                      : 'Jamais'
-                    }
+                    Non disponible
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

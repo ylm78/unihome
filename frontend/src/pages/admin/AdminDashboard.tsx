@@ -208,7 +208,17 @@ const RecentOrdersList: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          house_id,
+          color_id,
+          size_id,
+          quantity,
+          total_price,
+          status,
+          created_at
+        `)
         .order('created_at', { ascending: false })
         .limit(4);
       
@@ -286,7 +296,16 @@ const RecentQuotesList: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quotes')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          house_id,
+          color_id,
+          size_id,
+          total_price,
+          status,
+          created_at
+        `)
         .order('created_at', { ascending: false })
         .limit(4);
       
