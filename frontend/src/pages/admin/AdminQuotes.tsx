@@ -35,7 +35,7 @@ const AdminQuotes: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quotes')
-        .select('*')
+        .select('id, user_id, house_id, color_id, size_id, customizations, total_price, status, message, admin_notes, created_at, updated_at')
         .order('created_at', { ascending: false });
       
       if (error) throw error;

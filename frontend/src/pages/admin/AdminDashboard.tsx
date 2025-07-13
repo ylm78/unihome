@@ -296,16 +296,7 @@ const RecentQuotesList: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('quotes')
-        .select(`
-          id,
-          user_id,
-          house_id,
-          color_id,
-          size_id,
-          total_price,
-          status,
-          created_at
-        `)
+        .select('id, user_id, house_id, color_id, size_id, total_price, status, created_at')
         .order('created_at', { ascending: false })
         .limit(4);
       
