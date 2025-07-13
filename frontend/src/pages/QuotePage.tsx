@@ -11,7 +11,7 @@ interface QuotePageProps {
 }
 
 const QuotePage: React.FC<QuotePageProps> = ({ onNavigate, initialData }) => {
-  const [selectedHouse, setSelectedHouse] = useState(initialData?.houseId || '');
+  const [selectedHouse, setSelectedHouse] = useState(initialData?.houseId || (initialData?.fromCart && initialData?.cartItems?.[0]?.houseId) || '');
   const [selectedColor, setSelectedColor] = useState('white');
   const [selectedSize, setSelectedSize] = useState('medium');
   const [customizations, setCustomizations] = useState<string[]>([]);
@@ -23,10 +23,27 @@ const QuotePage: React.FC<QuotePageProps> = ({ onNavigate, initialData }) => {
   const [loadingHouses, setLoadingHouses] = useState(true);
   const [colors, setColors] = useState<any[]>([]);
   const [sizes, setSizes] = useState<any[]>([]);
+  const [isFromCart, setIsFromCart] = useState(initialData?.fromCart || false);
+  const [cartItems, setCartItems] = useState(initialData?.cartItems || []);
 
   React.useEffect(() => {
     loadAllData();
   }, []);
+
+  React.useEffect(() => {
+    // Si on vient du panier, pré-remplir avec le premier produit
+    if (isFromCart && cartItems.length > 0) {
+      const firstItem = cartItems[0];
+      setSelectedHouse(firstItem.houseId);
+      
+      // Pré-remplir le message avec les détails du panier
+      const cartSummary = cartItems.map(item => 
+        `- ${item.houseName} (${item.colorName}, ${item.sizeName}) x${item.quantity} = ${item.totalPrice.toLocaleString('fr-FR')}€`
+      ).join('\n');
+      
+      setMessage(`Bonjour,\n\nJe souhaiterais un devis pour les produits suivants de mon panier :\n\n${cartSummary}\n\nTotal panier : ${cartItems.reduce((sum, item) => sum + item.totalPrice, 0).toLocaleString('fr-FR')}€\n\nMerci de me faire une proposition personnalisée.`);
+    }
+  }, [isFromCart, cartItems]);
 
   const loadAllData = async () => {
     try {
@@ -42,10 +59,16 @@ const QuotePage: React.FC<QuotePageProps> = ({ onNavigate, initialData }) => {
       
       // Définir les valeurs par défaut
       if (colorsData && colorsData.length > 0) {
-        setSelectedColor(colorsData[0].id);
+        const defaultColor = isFromCart && cartItems.length > 0 
+          ? colorsData.find(c => c.id === cartItems[0].colorId) || colorsData[0]
+          : colorsData[0];
+        setSelectedColor(defaultColor.id);
       }
       if (sizesData && sizesData.length > 0) {
-        setSelectedSize(sizesData[0].id);
+        const defaultSize = isFromCart && cartItems.length > 0 
+          ? sizesData.find(s => s.id === cartItems[0].sizeId) || sizesData[0]
+          : sizesData[0];
+        setSelectedSize(defaultSize.id);
       }
     } catch (error) {
       console.error('Erreur lors du chargement des maisons:', error);
@@ -168,17 +191,59 @@ const QuotePage: React.FC<QuotePageProps> = ({ onNavigate, initialData }) => {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                Demande de devis personnalisé
+                {isFromCart ? 'Devis pour vos produits du panier' : 'Demande de devis personnalisé'}
               </h1>
               <p className="text-gray-600">
-                Configurez votre maison container et obtenez un devis détaillé
+                {isFromCart 
+                  ? 'Obtenez un devis personnalisé pour les produits de votre panier'
+                  : 'Configurez votre maison container et obtenez un devis détaillé'
+                }
               </p>
             </div>
+
+            {/* Résumé du panier si on vient du panier */}
+            {isFromCart && cartItems.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                  📦 Produits de votre panier ({cartItems.length} article{cartItems.length > 1 ? 's' : ''})
+                </h3>
+                <div className="space-y-3">
+                  {cartItems.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={item.image} 
+                          alt={item.houseName}
+                          className="w-12 h-12 rounded-lg object-cover"
+                        />
+                        <div>
+                          <div className="font-medium text-gray-900">{item.houseName}</div>
+                          <div className="text-sm text-gray-500">
+                            {item.colorName} • {item.sizeName} • Qté: {item.quantity}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-lg font-bold text-blue-600">
+                        {item.totalPrice.toLocaleString('fr-FR')}€
+                      </div>
+                    </div>
+                  ))}
+                  <div className="border-t pt-3 flex justify-between items-center">
+                    <span className="text-lg font-semibold text-gray-900">Total panier :</span>
+                    <span className="text-xl font-bold text-blue-600">
+                      {cartItems.reduce((sum, item) => sum + item.totalPrice, 0).toLocaleString('fr-FR')}€
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* House Selection */}
               <div className="bg-white p-6 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-4">Choisir un modèle</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  {isFromCart ? 'Modèle principal pour le devis' : 'Choisir un modèle'}
+                </h3>
                 <select
                   value={selectedHouse}
                   onChange={(e) => setSelectedHouse(e.target.value)}
@@ -193,6 +258,11 @@ const QuotePage: React.FC<QuotePageProps> = ({ onNavigate, initialData }) => {
                     </option>
                   ))}
                 </select>
+                {isFromCart && (
+                  <p className="text-sm text-blue-600 mt-2">
+                    💡 Modèle pré-sélectionné depuis votre panier
+                  </p>
+                )}
               </div>
 
               {/* Color Selection */}

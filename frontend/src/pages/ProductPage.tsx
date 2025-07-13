@@ -314,7 +314,7 @@ const ProductPage: React.FC<ProductPageProps> = ({ productId, onNavigate }) => {
                 </button>
                 <button
                   onClick={() => onNavigate('quote', { houseId: house.id })}
-                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
                 >
                   Demander un devis
                 </button>

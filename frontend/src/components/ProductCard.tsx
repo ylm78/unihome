@@ -67,7 +67,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ house, onViewDetails, onAddTo
               className="flex items-center px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all duration-200"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
-              Ajouter
+              Panier
             </button>
           </div>
         </div>
