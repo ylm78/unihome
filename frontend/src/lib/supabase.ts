@@ -3,11 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Valeurs par défaut pour le développement
-const defaultUrl = 'https://flqtatkhnjvldmswklry.supabase.co';
-const defaultKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZscXRhdGtobnp2bGRtc3drbHJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY3NzU5NzQsImV4cCI6MjA1MjM1MTk3NH0.VhQKJhJGqJhJGqJhJGqJhJGqJhJGqJhJGqJhJGqJhJG';
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Variables d\'environnement Supabase manquantes. Vérifiez votre fichier .env');
+}
 
-export const supabase = createClient(supabaseUrl || defaultUrl, supabaseAnonKey || defaultKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
