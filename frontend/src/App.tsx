@@ -149,7 +149,7 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route path="/admin/*" element={<AdminRoute><AdminApp /></AdminRoute>} />
+      <Route path="/admin" element={<AdminRoute><AdminApp /></AdminRoute>} />
       <Route path="/*" element={<PublicApp />} />
     </Routes>
   );
