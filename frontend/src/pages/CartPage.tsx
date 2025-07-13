@@ -51,10 +51,10 @@ const CartPage: React.FC<CartPageProps> = ({ onNavigate }) => {
               onClick={() => onNavigate('catalog')}
               className="flex items-center text-gray-600 hover:text-gray-900 mr-4 transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 mr-2" />
+              Demander un devis pour ces produits
               Continuer les achats
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">Votre panier</h1>
+              onClick={() => onNavigate('quote', { fromCart: true, cartItems: items })}
           </div>
           <button
             onClick={clearCart}
