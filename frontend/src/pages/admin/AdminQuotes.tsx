@@ -33,16 +33,14 @@ const AdminQuotes: React.FC = () => {
 
   const loadQuotes = async () => {
     try {
-      // Charger les devis avec les informations des utilisateurs
+      // Charger les devis sans jointures pour éviter les erreurs RLS
       const { data, error } = await supabase
         .from('quotes')
-        .select(`
-          *,
-          user_profiles!inner(first_name, last_name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
+      console.log('✅ Devis chargés:', data?.length || 0);
       setQuotes(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des devis:', error);
@@ -205,27 +203,20 @@ const AdminQuotes: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {quote.user_profiles ? (
-                        <div>
-                          <div className="font-medium">
-                            {quote.user_profiles.first_name} {quote.user_profiles.last_name}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {quote.user_profiles.email}
-                          </div>
-                        </div>
-                      ) : (
-                        `Client #${quote.user_id.slice(0, 8)}`
-                      )
-                      }
+                      <div className="font-medium">
+                        Client #{quote.user_id.slice(0, 8)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ID: {quote.user_id}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {quote.houses?.name || `Maison #${quote.house_id}`}
+                      Maison #{quote.house_id.slice(0, 8)}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {quote.colors?.name || `Couleur #${quote.color_id}`} • {quote.sizes?.name || `Taille #${quote.size_id}`}
+                      Couleur: {quote.color_id} • Taille: {quote.size_id}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -306,14 +297,11 @@ const AdminQuotes: React.FC = () => {
               <div key={quote.id} className="border-l-4 border-yellow-400 pl-4 py-2">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-gray-900">Devis #D{quote.id.padStart(3, '0')}</span>
-                 <span className="text-sm text-gray-500">
-                   {quote.user_profiles ? 
-                     `${quote.user_profiles.first_name} ${quote.user_profiles.last_name}` : 
-                     `Client #${quote.user_id}`
-                   }
-                 </span>
+                  <span className="text-sm text-gray-500">
+                    Client #{quote.user_id.slice(0, 8)}
+                  </span>
                 </div>
-               <p className="text-gray-700 text-sm">{quote.message || 'Aucun message'}</p>
+                <p className="text-gray-700 text-sm">{quote.message || 'Aucun message'}</p>
               </div>
             ))}
           </div>
