@@ -78,7 +78,6 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onAddToCart }) => {
       totalPrice: house.basePrice,
       image: house.images[0],
     });
-    toast.success(`${house.name} ajouté au panier !`);
   };
 
   return (

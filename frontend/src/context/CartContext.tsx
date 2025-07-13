@@ -203,6 +203,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Recharger le panier pour avoir les données à jour
         await loadCart();
         
+        toast.success(`${item.houseName} ajouté au panier !`);
         console.log('✅ Article ajouté au panier Supabase');
       } else {
         console.log('👤 Ajout au panier localStorage');
@@ -212,6 +213,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: Date.now().toString(),
         };
         dispatch({ type: 'ADD_TO_CART', payload: newItem });
+        toast.success(`${item.houseName} ajouté au panier !`);
       }
     } catch (error) {
       console.error('Erreur lors de l\'ajout au panier:', error);

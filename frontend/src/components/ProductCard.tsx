@@ -12,7 +12,6 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ house, onViewDetails, onAddToCart }) => {
   const handleAddToCart = () => {
     onAddToCart(house);
-    toast.success(`${house.name} ajouté au panier !`);
   };
 
   return (

@@ -80,7 +80,6 @@ const CatalogPage: React.FC<CatalogPageProps> = ({ onNavigate, onAddToCart }) =>
       totalPrice: house.basePrice,
       image: house.images[0],
     });
-    toast.success(`${house.name} ajouté au panier !`);
   };
 
   const categories = [
