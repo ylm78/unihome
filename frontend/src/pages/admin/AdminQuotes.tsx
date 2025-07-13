@@ -33,6 +33,7 @@ const AdminQuotes: React.FC = () => {
 
   const loadQuotes = async () => {
     try {
+      // Simple query without joins to avoid RLS recursion
       const { data, error } = await supabase
         .from('quotes')
         .select('id, user_id, house_id, color_id, size_id, customizations, total_price, status, message, admin_notes, created_at, updated_at')
