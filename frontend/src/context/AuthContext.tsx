@@ -1,4 +1,3 @@
-// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
@@ -29,8 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Charger le profil utilisateur depuis la base de données
   const loadUserProfile = async (userId: string, email: string) => {
-    console.log('👤 Chargement profil utilisateur:', userId);
     try {
       const { data: profile, error } = await supabase
         .from('user_profiles')
@@ -38,121 +37,91 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('📝 Profil utilisateur non trouvé, création d\'un profil basique');
-          setUser({ id: userId, email, firstName: '', lastName: '', phone: '', address: '' });
-        } else {
-          console.error('❌ Erreur lors du chargement du profil:', error.message);
-          setUser({ id: userId, email, firstName: '', lastName: '', phone: '', address: '' });
-        }
-        return;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erreur lors du chargement du profil:', error);
       }
 
-      console.log('✅ Profil utilisateur chargé:', profile.first_name, profile.last_name);
-
-      setUser({
-        id: profile.id,
+      // Créer un objet utilisateur avec les données disponibles
+      const userData: User = {
+        id: userId,
         email: email,
-        firstName: profile.first_name || '',
-        lastName: profile.last_name || '',
-        phone: profile.phone || '',
-        address: profile.address || '',
-      });
+        firstName: profile?.first_name || '',
+        lastName: profile?.last_name || '',
+        phone: profile?.phone || '',
+        address: profile?.address || '',
+      };
+
+      setUser(userData);
     } catch (err) {
-      console.error('❌ Exception lors du chargement du profil:', err);
-      // Créer un utilisateur basique pour ne pas bloquer l'application
-      setUser({ id: userId, email, firstName: '', lastName: '', phone: '', address: '' });
+      console.error('Exception lors du chargement du profil:', err);
+      // Créer un utilisateur basique en cas d'erreur
+      setUser({
+        id: userId,
+        email: email,
+        firstName: '',
+        lastName: '',
+        phone: '',
+        address: '',
+      });
     }
   };
 
+  // Initialisation au démarrage
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
+    const initAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('❌ Erreur de session:', error.message);
-          setLoading(false);
-          return;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (session?.user) {
-          console.log('✅ Session utilisateur trouvée');
           setSupabaseUser(session.user);
           await loadUserProfile(session.user.id, session.user.email || '');
         }
-      } catch (err) {
-        console.error('❌ Erreur d\'initialisation:', err);
+      } catch (error) {
+        console.error('Erreur d\'initialisation auth:', error);
       } finally {
-        console.log('✅ Initialisation terminée');
         setLoading(false);
       }
     };
 
-    init();
+    initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log('🔄 Changement d\'état d\'authentification:', _event);
-      setLoading(true);
-      try {
-        if (session?.user) {
-          setSupabaseUser(session.user);
-          await loadUserProfile(session.user.id, session.user.email || '');
-        } else {
-          setSupabaseUser(null);
-          setUser(null);
-        }
-      } catch (err) {
-        console.error('❌ Erreur changement d\'état:', err);
-      } finally {
-        setLoading(false);
+    // Écouter les changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        await loadUserProfile(session.user.id, session.user.email || '');
+      } else {
+        setSupabaseUser(null);
+        setUser(null);
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fonction pour migrer le panier localStorage vers la DB lors de la connexion
-  const migrateLocalCartToDatabase = async (userId: string) => {
-    try {
-      const localCart = localStorage.getItem('cart');
-      if (localCart) {
-        const cartItems = JSON.parse(localCart);
-        if (cartItems.length > 0) {
-          console.log('🛒 Migration du panier local vers la base de données...');
-          // Cette migration sera gérée par le CartContext
-          // On vide juste le localStorage après la connexion
-          localStorage.removeItem('cart');
-        }
-      }
-    } catch (error) {
-      console.error('Erreur lors de la migration du panier:', error);
-    }
-  };
-
   const login = async (email: string, password: string): Promise<boolean> => {
-    console.log('🔑 Tentative de connexion pour:', email);
-    setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       if (error) {
-        console.error('❌ Erreur de connexion:', error.message);
-        throw new Error("Email ou mot de passe incorrect");
+        toast.error('Email ou mot de passe incorrect');
+        return false;
       }
 
       if (data.user) {
-        console.log('✅ Connexion réussie');
-        await loadUserProfile(data.user.id, data.user.email || '');
-        await migrateLocalCartToDatabase(data.user.id);
+        toast.success('Connexion réussie !');
+        return true;
       }
 
-      return true;
-    } catch (err: any) {
-      console.error("❌ Erreur de connexion:", err.message);
-      toast.error(err.message || 'Erreur de connexion');
       return false;
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Erreur de connexion:', error);
+      toast.error('Erreur de connexion');
+      return false;
     }
   };
 
@@ -163,7 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     lastName,
     phone,
   }: RegisterParams): Promise<boolean> => {
-    console.log('📝 Tentative d\'inscription pour:', email);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -179,30 +147,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('❌ Erreur d\'inscription:', error.message);
-        throw new Error(error.message);
+        toast.error(error.message);
+        return false;
       }
 
-      console.log('✅ Inscription réussie, connexion automatique...');
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      if (loginError) {
-        console.error('❌ Erreur de connexion après inscription:', loginError.message);
-        throw new Error(loginError.message);
+      if (data.user) {
+        // Connexion automatique après inscription
+        const loginResult = await login(email, password);
+        if (loginResult) {
+          toast.success('Inscription réussie !');
+        }
+        return loginResult;
       }
 
-      return true;
-    } catch (err: any) {
-      console.error("❌ Erreur d'inscription:", err.message);
-      toast.error(err.message || 'Erreur d\'inscription');
+      return false;
+    } catch (error) {
+      console.error('Erreur d\'inscription:', error);
+      toast.error('Erreur d\'inscription');
       return false;
     }
   };
 
-  const logout = () => {
-    console.log('👋 Déconnexion');
-    supabase.auth.signOut();
-    setUser(null);
-    setSupabaseUser(null);
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSupabaseUser(null);
+      toast.success('Déconnexion réussie');
+    } catch (error) {
+      console.error('Erreur de déconnexion:', error);
+    }
   };
 
   return (
