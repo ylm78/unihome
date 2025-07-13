@@ -440,8 +440,8 @@ export class CartService {
       .select('*')
       .eq('user_id', cartItem.user_id)
       .eq('house_id', cartItem.house_id)
-      .eq('color_id', cartItem.color_id || '')
-      .eq('size_id', cartItem.size_id || '')
+      .eq('color_id', cartItem.color_id)
+      .eq('size_id', cartItem.size_id)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
