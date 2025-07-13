@@ -3,16 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log('🔧 Configuration Supabase:');
-console.log('URL:', supabaseUrl ? '✅ Définie' : '❌ Manquante');
-console.log('Key:', supabaseAnonKey ? '✅ Définie' : '❌ Manquante');
-
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Variables d\'environnement Supabase manquantes!');
-  throw new Error('Configuration Supabase incomplète');
+  console.error('URL:', supabaseUrl);
+  console.error('Key:', supabaseAnonKey ? 'Définie' : 'Manquante');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -20,21 +17,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Test de connexion au démarrage
-const testConnection = async () => {
-  try {
-    const { data, error } = await supabase.from('houses').select('count').limit(1);
-    if (error) {
-      console.warn('⚠️ Connexion Supabase limitée:', error.message);
-    } else {
-      console.log('✅ Connexion Supabase réussie');
-    }
-  } catch (err) {
-    console.error('❌ Erreur de connexion Supabase:', err);
-  }
-};
-
-testConnection();
 
 // Types pour la base de données
 export interface DatabaseHouse {
