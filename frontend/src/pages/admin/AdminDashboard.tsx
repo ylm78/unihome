@@ -28,30 +28,44 @@ const AdminDashboard: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      // Charger les vraies données depuis Supabase
-      const [houses, quotes, orders, userProfiles] = await Promise.all([
-        HouseService.getAll(),
-        QuoteService.getAll(),
-        OrderService.getAll(),
-        UserService.getAll()
+      // Charger les données de base sans relations complexes
+      const [housesResult, quotesResult, ordersResult, userProfilesResult] = await Promise.all([
+        supabase.from('houses').select('*'),
+        supabase.from('quotes').select('*'),
+        supabase.from('orders').select('*'),
+        supabase.from('user_profiles').select('*')
       ]);
       
-      const totalRevenue = (orders || []).reduce((sum, order) => {
+      const houses = housesResult.data || [];
+      const quotes = quotesResult.data || [];
+      const orders = ordersResult.data || [];
+      const userProfiles = userProfilesResult.data || [];
+      
+      const totalRevenue = orders.reduce((sum, order) => {
         return sum + Math.round(order.total_price / 100);
       }, 0);
       
-      const pendingQuotes = (quotes || []).filter(q => q.status === 'pending').length;
+      const pendingQuotes = quotes.filter(q => q.status === 'pending').length;
       
       setStats({
-        totalHouses: (houses || []).length,
-        totalOrders: (orders || []).length,
-        totalQuotes: (quotes || []).length,
-        totalUsers: (userProfiles || []).length,
+        totalHouses: houses.length,
+        totalOrders: orders.length,
+        totalQuotes: quotes.length,
+        totalUsers: userProfiles.length,
         monthlyRevenue: totalRevenue,
         pendingQuotes: pendingQuotes,
       });
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
+      // Définir des valeurs par défaut en cas d'erreur
+      setStats({
+        totalHouses: 0,
+        totalOrders: 0,
+        totalQuotes: 0,
+        totalUsers: 0,
+        monthlyRevenue: 0,
+        pendingQuotes: 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -192,10 +206,30 @@ const RecentOrdersList: React.FC = () => {
   
   const loadRecentOrders = async () => {
     try {
-      const data = await OrderService.getAll();
-      setOrders((data || []).slice(0, 4));
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user_profiles!orders_user_id_fkey(first_name, last_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      
+      if (error) {
+        console.error('Erreur lors du chargement des commandes:', error);
+        // Fallback: charger sans les relations
+        const { data: fallbackData } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(4);
+        setOrders(fallbackData || []);
+      } else {
+        setOrders(data || []);
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des commandes:', error);
+      setOrders([]);
     }
   };
   
@@ -261,10 +295,31 @@ const RecentQuotesList: React.FC = () => {
   
   const loadRecentQuotes = async () => {
     try {
-      const data = await QuoteService.getAll();
-      setQuotes((data || []).slice(0, 4));
+      const { data, error } = await supabase
+        .from('quotes')
+        .select(`
+          *,
+          houses!quotes_house_id_fkey(name),
+          user_profiles!quotes_user_id_fkey(first_name, last_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      
+      if (error) {
+        console.error('Erreur lors du chargement des devis:', error);
+        // Fallback: charger sans les relations
+        const { data: fallbackData } = await supabase
+          .from('quotes')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(4);
+        setQuotes(fallbackData || []);
+      } else {
+        setQuotes(data || []);
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des devis:', error);
+      setQuotes([]);
     }
   };
   

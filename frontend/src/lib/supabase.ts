@@ -265,13 +265,7 @@ export class QuoteService {
   static async getAll() {
     const { data, error } = await supabase
       .from('quotes')
-      .select(`
-        *,
-        houses(name),
-        colors(name),
-        sizes(name),
-        user_profiles(first_name, last_name)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -327,13 +321,7 @@ export class OrderService {
   static async getAll() {
     const { data, error } = await supabase
       .from('orders')
-      .select(`
-        *,
-        houses(name),
-        colors(name),
-        sizes(name),
-        user_profiles(first_name, last_name)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
     
     if (error) throw error;

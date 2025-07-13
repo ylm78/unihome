@@ -33,11 +33,17 @@ const AdminQuotes: React.FC = () => {
 
   const loadQuotes = async () => {
     try {
-      const data = await QuoteService.getAll();
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
       setQuotes(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des devis:', error);
       toast.error('Erreur lors du chargement des devis');
+      setQuotes([]);
     } finally {
       setLoading(false);
     }

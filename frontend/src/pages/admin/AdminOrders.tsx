@@ -33,13 +33,7 @@ const AdminOrders: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select(`
-          *,
-          houses(name),
-          colors(name),
-          sizes(name),
-          user_profiles(first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -47,6 +41,7 @@ const AdminOrders: React.FC = () => {
     } catch (error) {
       console.error('Erreur lors du chargement des commandes:', error);
       toast.error('Erreur lors du chargement des commandes');
+      setOrders([]);
     } finally {
       setLoading(false);
     }
