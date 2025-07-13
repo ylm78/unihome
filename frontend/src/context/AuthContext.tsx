@@ -13,6 +13,7 @@ type RegisterParams = {
 
 interface AuthContextType {
   user: User | null;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (userData: RegisterParams) => Promise<boolean>;
   logout: () => void;
@@ -27,6 +28,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Email admin autorisé
+  const ADMIN_EMAIL = 'arifxhakan78@gmail.com';
+
+  // Fonction pour vérifier si l'utilisateur est admin
+  const isUserAdmin = (email: string): boolean => {
+    return email === ADMIN_EMAIL;
+  };
 
   // Fonction pour créer un utilisateur basique
   const createBasicUser = (supabaseUser: any): User => {
@@ -130,6 +139,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         console.log('✅ Connexion réussie');
         toast.success('Connexion réussie !');
+        
+        // Redirection automatique pour l'admin
+        if (isUserAdmin(data.user.email || '')) {
+          console.log('🔑 Utilisateur admin détecté, redirection vers /admin');
+          setTimeout(() => {
+            window.location.href = '/admin';
+          }, 1000);
+        }
+        
         return true;
       }
 
@@ -200,6 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        isAdmin: user ? isUserAdmin(user.email) : false,
         login,
         register,
         logout,
