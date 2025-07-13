@@ -442,9 +442,9 @@ export class CartService {
       .eq('house_id', cartItem.house_id)
       .eq('color_id', cartItem.color_id)
       .eq('size_id', cartItem.size_id)
-      .single();
+      .maybeSingle();
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    if (checkError) {
       throw checkError;
     }
 
